@@ -1,0 +1,6 @@
+lunar/
+frontend/node_modules/
+frontend/dist/
+.env
+.env.local
+__pycache__/
