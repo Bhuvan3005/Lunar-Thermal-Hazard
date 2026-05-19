@@ -1,0 +1,28 @@
+{
+  "name": "luna-graph-moon-dashboard",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.17.10",
+    "@supabase/supabase-js": "^2.106.0",
+    "cesium": "^1.111.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "resium": "^1.21.1",
+    "three": "^0.160.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.7.0",
+    "vite": "^5.4.21",
+    "vite-plugin-cesium": "^1.2.23"
+  }
+}
