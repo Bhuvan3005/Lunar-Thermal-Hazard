@@ -6,14 +6,20 @@ from datetime import datetime
 
 import cv2
 import numpy as np
-import psycopg2
+try:
+    import psycopg2
+except ModuleNotFoundError as exc:
+    raise ModuleNotFoundError(
+        "Missing dependency: psycopg2. Install with `pip install psycopg2-binary` "
+        "or `pip install -r requirements.txt`."
+    ) from exc
 import requests
 from dotenv import load_dotenv
 from PIL import Image
 
 load_dotenv()
 
-DATABASE_URL = "https://eujmzfwoxtbbzcjabifq.supabase.co"
+DATABASE_URL = os.getenv("DATABASE_URL")
 WMTS_TILE_URL = (
     
     "https://trek.nasa.gov/tiles/Moon/EQ/LRO_WAC_Mosaic_Global_303ppd_v02/1.0.0/default/default028mm/{z}/{y}/{x}.jpg"
@@ -135,14 +141,29 @@ def build_dataset(
     patch_cols: int,
     connection,
     max_tiles: int | None = None,
+    start_x: int = 0,
+    start_y: int = 0,
 ):
     tile_count_x = 2**zoom
     tile_count_y = 2 ** (zoom - 1)
+    if start_x < 0 or start_y < 0:
+        raise ValueError("start_x and start_y must both be non-negative")
+    if start_x >= tile_count_x or start_y >= tile_count_y:
+        raise ValueError(
+            f"Start coordinate out of range for zoom {zoom}: "
+            f"start_x={start_x}, start_y={start_y}, "
+            f"max_x={tile_count_x-1}, max_y={tile_count_y-1}"
+        )
+
     tile_counter = 0
     inserted = 0
 
     for y in range(tile_count_y):
+        if y < start_y:
+            continue
         for x in range(tile_count_x):
+            if y == start_y and x < start_x:
+                continue
             if max_tiles is not None and tile_counter >= max_tiles:
                 break
 
@@ -210,6 +231,18 @@ def parse_args():
         default=None,
         help="Maximum number of tiles to process, useful for testing.",
     )
+    parser.add_argument(
+        "--start-x",
+        type=int,
+        default=0,
+        help="Starting tile X coordinate when resuming processing.",
+    )
+    parser.add_argument(
+        "--start-y",
+        type=int,
+        default=0,
+        help="Starting tile Y coordinate when resuming processing.",
+    )
     return parser.parse_args()
 
 
@@ -233,6 +266,8 @@ def main():
             patch_cols=args.patch_cols,
             connection=connection,
             max_tiles=args.max_tiles,
+            start_x=args.start_x,
+            start_y=args.start_y,
         )
     finally:
         connection.close()
