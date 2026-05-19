@@ -3,28 +3,23 @@ import io
 import os
 import sys
 from datetime import datetime
+from pathlib import Path
 
 import cv2
 import numpy as np
-try:
-    import psycopg2
-except ModuleNotFoundError as exc:
-    raise ModuleNotFoundError(
-        "Missing dependency: psycopg2. Install with `pip install psycopg2-binary` "
-        "or `pip install -r requirements.txt`."
-    ) from exc
 import requests
+from supabase import create_client, Client
 from dotenv import load_dotenv
 from PIL import Image
 
-load_dotenv()
+load_dotenv(dotenv_path=Path(__file__).resolve().parent / ".env")
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
 WMTS_TILE_URL = (
-    
     "https://trek.nasa.gov/tiles/Moon/EQ/LRO_WAC_Mosaic_Global_303ppd_v02/1.0.0/default/default028mm/{z}/{y}/{x}.jpg"
 )
-
 
 def fetch_tile(z: int, x: int, y: int, timeout: int = 30, retries: int = 3) -> Image.Image:
     url = WMTS_TILE_URL.format(z=z, x=x, y=y)
@@ -76,33 +71,6 @@ def compute_features(patch: np.ndarray) -> dict:
         "shadow_score": shadow_score,
     }
 
-
-def create_lunar_regions_table(cursor):
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS lunar_regions (
-            id SERIAL PRIMARY KEY,
-            zoom INTEGER NOT NULL,
-            tile_x INTEGER NOT NULL,
-            tile_y INTEGER NOT NULL,
-            patch_row INTEGER NOT NULL,
-            patch_col INTEGER NOT NULL,
-            latitude REAL NOT NULL,
-            longitude REAL NOT NULL,
-            elevation REAL NOT NULL,
-            roughness REAL NOT NULL,
-            crater_density REAL NOT NULL,
-            shadow_score REAL NOT NULL,
-            inserted_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
-        )
-        """
-    )
-    cursor.execute(
-        "CREATE UNIQUE INDEX IF NOT EXISTS idx_lunar_regions_tile_patch "
-        "ON lunar_regions (zoom, tile_x, tile_y, patch_row, patch_col)"
-    )
-
-
 def compute_patch_coordinates(
     zoom: int,
     tile_x: int,
@@ -121,25 +89,17 @@ def compute_patch_coordinates(
     latitude = 90.0 - patch_fraction_y * 180.0
     return latitude, longitude
 
-
-def insert_into_database(connection, rows):
-    with connection.cursor() as cursor:
-        create_lunar_regions_table(cursor)
-        insert_query = (
-            "INSERT INTO lunar_regions "
-            "(zoom, tile_x, tile_y, patch_row, patch_col, latitude, longitude, "
-            "elevation, roughness, crater_density, shadow_score) "
-            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-        )
-        cursor.executemany(insert_query, rows)
-        connection.commit()
-
+def insert_into_database(supabase: Client, rows: list[dict]):
+    try:
+        supabase.table("lunar_regions").upsert(rows).execute()
+    except Exception as e:
+        print(f"ERROR: Failed to insert data into Supabase: {e}")
 
 def build_dataset(
     zoom: int,
     patch_rows: int,
     patch_cols: int,
-    connection,
+    supabase: Client,
     max_tiles: int | None = None,
     start_x: int = 0,
     start_y: int = 0,
@@ -179,22 +139,24 @@ def build_dataset(
                     zoom, x, y, patch_row, patch_col, patch_rows, patch_cols
                 )
                 tile_rows.append(
-                    (
-                        zoom,
-                        x,
-                        y,
-                        patch_row,
-                        patch_col,
-                        latitude,
-                        longitude,
-                        features["elevation"],
-                        features["roughness"],
-                        features["crater_density"],
-                        features["shadow_score"],
-                    )
+                    {
+                        "zoom": zoom,
+                        "tile_x": x,
+                        "tile_y": y,
+                        "patch_row": patch_row,
+                        "patch_col": patch_col,
+                        "latitude": latitude,
+                        "longitude": longitude,
+                        "elevation": features["elevation"],
+                        "roughness": features["roughness"],
+                        "crater_density": features["crater_density"],
+                        "shadow_score": features["shadow_score"],
+                    }
                 )
 
-            insert_into_database(connection, tile_rows)
+            # Insert in chunks if needed, but 512 patches is usually fine for a single insert
+            insert_into_database(supabase, tile_rows)
+            
             tile_counter += 1
             inserted += len(tile_rows)
             print(f" Stored {len(tile_rows)} patches from tile x={x} y={y}")
@@ -247,31 +209,27 @@ def parse_args():
 
 
 def main():
-    if not DATABASE_URL:
-        print("ERROR: DATABASE_URL is not set in .env")
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        print("ERROR: SUPABASE_URL or SUPABASE_KEY is not set in .env")
         sys.exit(1)
 
     args = parse_args()
 
     try:
-        connection = psycopg2.connect(DATABASE_URL)
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
     except Exception as exc:
-        print("ERROR: Could not connect to the PostgreSQL database:", exc)
+        print("ERROR: Could not initialize Supabase client:", exc)
         sys.exit(1)
 
-    try:
-        build_dataset(
-            zoom=args.zoom,
-            patch_rows=args.patch_rows,
-            patch_cols=args.patch_cols,
-            connection=connection,
-            max_tiles=args.max_tiles,
-            start_x=args.start_x,
-            start_y=args.start_y,
-        )
-    finally:
-        connection.close()
-
+    build_dataset(
+        zoom=args.zoom,
+        patch_rows=args.patch_rows,
+        patch_cols=args.patch_cols,
+        supabase=supabase,
+        max_tiles=args.max_tiles,
+        start_x=args.start_x,
+        start_y=args.start_y,
+    )
 
 if __name__ == "__main__":
     main()

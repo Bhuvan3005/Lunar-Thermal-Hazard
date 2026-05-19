@@ -4,3 +4,6 @@ frontend/dist/
 .env
 .env.local
 __pycache__/
+*.db
+venv/
+# Created by venv; see https://docs.python.org/3/library/venv.html
