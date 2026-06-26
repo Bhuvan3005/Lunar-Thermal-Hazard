@@ -1,5 +1,5 @@
 fastapi
-uvicorn
+uvicorn[standard]
 requests
 python-dotenv
 psycopg2-binary
@@ -16,3 +16,5 @@ sqlalchemy
 aiohttp
 pydantic
 python-multipart
+supabase
+rasterio

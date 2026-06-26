@@ -1,0 +1,62 @@
+# ============================================================
+# .dockerignore — Lunar Thermal Hazard
+# Keeps Docker build contexts small and avoids leaking secrets.
+# ============================================================
+
+# ---- Secrets / environment files ----
+.env
+.env.local
+frontend/.env
+frontend/.env.local
+
+# ---- Python cache / bytecode ----
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# ---- Virtual environments ----
+.venv/
+venv/
+env/
+
+# ---- Node / frontend build artefacts ----
+frontend/node_modules/
+frontend/dist/
+
+# ---- Large data files (not needed inside container) ----
+# The 8 GB GeoTIFF stays on the host; the backend reads it via a
+# mounted volume path if required, or via the DB.
+Lunar_LRO_LOLA_Global_LDEM_118m_Mar2014.tif
+lunar/
+
+# ---- Git internals ----
+.git/
+.gitignore
+
+# ---- IDE / editor ----
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---- OS artefacts ----
+.DS_Store
+Thumbs.db
+
+# ---- Logs ----
+*.log
+logs/
+
+# ---- Docker files themselves (no need to copy in) ----
+docker-compose.yml
+docker-compose.*.yml
+**/Dockerfile

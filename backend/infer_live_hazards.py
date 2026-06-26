@@ -3,14 +3,14 @@ import os
 from datetime import datetime, timezone
 
 import pandas as pd
-import psycopg2
 import torch
 import torch.nn.functional as F
 from dotenv import load_dotenv
 from psycopg2.extras import execute_batch
 from sklearn.preprocessing import LabelEncoder
 from torch_geometric.data import Data
-from torch_geometric.nn import GCNConv
+from torch_geometric.nn import SAGEConv
+from sqlalchemy import create_engine
 
 load_dotenv()
 
@@ -24,11 +24,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def get_db_connection():
+def get_db_engine():
     if not DATABASE_URL:
         logger.error("DATABASE_URL is not configured in .env")
         raise RuntimeError("DATABASE_URL is required")
-    return psycopg2.connect(DATABASE_URL)
+    return create_engine(DATABASE_URL)
 
 
 def ensure_prediction_schema(conn):
@@ -161,25 +161,41 @@ def normalize_features(values):
     return normalized
 
 
-class LunarGCN(torch.nn.Module):
+class LunarGNN(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels):
         super().__init__()
-        self.conv1 = GCNConv(in_channels, hidden_channels)
-        self.conv2 = GCNConv(hidden_channels, out_channels)
+        self.conv1 = SAGEConv(in_channels, hidden_channels)
+        self.bn1 = torch.nn.BatchNorm1d(hidden_channels)
+        
+        self.conv2 = SAGEConv(hidden_channels, hidden_channels)
+        self.bn2 = torch.nn.BatchNorm1d(hidden_channels)
+        
+        self.conv3 = SAGEConv(hidden_channels, out_channels)
 
     def forward(self, x, edge_index):
+        # Layer 1
         x = self.conv1(x, edge_index)
+        x = self.bn1(x)
         x = F.relu(x)
+        x = F.dropout(x, p=0.3, training=self.training)
+
+        # Layer 2
         x = self.conv2(x, edge_index)
+        x = self.bn2(x)
+        x = F.relu(x)
+        x = F.dropout(x, p=0.3, training=self.training)
+
+        # Layer 3 (Output)
+        x = self.conv3(x, edge_index)
         return x
 
 
 def load_trained_model(in_channels, num_classes):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = LunarGCN(in_channels, hidden_channels=64, out_channels=num_classes).to(device)
+    model = LunarGNN(in_channels, hidden_channels=64, out_channels=num_classes).to(device)
     model.load_state_dict(torch.load("lunagraph_gcn_model.pth", map_location=device))
     model.eval()
-    logger.info("Loaded trained GCN model from lunagraph_gcn_model.pth on %s.", device)
+    logger.info("Loaded trained GNN model from lunagraph_gcn_model.pth on %s.", device)
     return model, device
 
 
@@ -282,14 +298,22 @@ def summarize_predictions(df):
 
 def run_live_inference():
     logger.info("Starting live lunar hazard inference.")
-    with get_db_connection() as conn:
-        ensure_prediction_schema(conn)
-        plasma_values, mag_values = load_latest_noaa_values(conn)
-        df = load_lunar_nodes(conn)
+    engine = get_db_engine()
+    
+    # Obtain a raw connection for custom cursor operations (DDL/batch updates)
+    raw_conn = engine.raw_connection()
+    try:
+        ensure_prediction_schema(raw_conn)
+        plasma_values, mag_values = load_latest_noaa_values(engine)
+        df = load_lunar_nodes(engine)
         df = apply_latest_noaa_values(df, plasma_values, mag_values)
         df = infer_predictions(df)
-        batch_update_predictions(conn, df, plasma_values, mag_values)
+        batch_update_predictions(raw_conn, df, plasma_values, mag_values)
         summarize_predictions(df)
+    finally:
+        raw_conn.close()
+        engine.dispose()
+        
     logger.info("Live inference completed at %s.", datetime.now(timezone.utc).isoformat())
     return df
 

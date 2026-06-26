@@ -1,56 +1,91 @@
-# =========================================
-# PYTHON
-# =========================================
+# ============================================================
+# .gitignore — Lunar Thermal Hazard
+# ============================================================
 
-lunar/
-
+# ── Python ───────────────────────────────────────────────────
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
+*.so
+.Python
+.eggs/
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
 
-# =========================================
-# NODE / REACT
-# =========================================
+# ── Virtual environments ──────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+lunar/
 
+# ── Node / React ──────────────────────────────────────────────
+node_modules/
 frontend/node_modules/
 frontend/dist/
+frontend/build/
+.npm/
 
-# =========================================
-# ENV FILES
-# =========================================
-
+# ── Secrets & environment ─────────────────────────────────────
 .env
 .env.local
-
+.env.*.local
 frontend/.env
 frontend/.env.local
 
-# =========================================
-# DATABASE / MODELS
-# =========================================
-
-*.db
-*.sqlite3
-
+# ── ML model checkpoints (large binaries) ────────────────────
+# Commit only intentional, versioned checkpoints.
 *.pth
 *.pt
+*.ckpt
+*.h5
+*.pkl
 
-# =========================================
-# VSCODE
-# =========================================
+# ── Large data files ──────────────────────────────────────────
+*.tif
+*.tiff
+*.hdf5
+*.hdf
 
-.vscode/
-
-# =========================================
-# OS FILES
-# =========================================
-
-.DS_Store
-Thumbs.db
-
-# =========================================
-# LOGS
-# =========================================
-
+# ── Logs ──────────────────────────────────────────────────────
 *.log
+logs/
+
+# ── Docker build artefacts ────────────────────────────────────
+.docker/
+
+# ── OS artefacts ──────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# ── IDE — VS Code ─────────────────────────────────────────────
+.vscode/
+*.code-workspace
+
+# ── IDE — JetBrains ──────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# ── Jupyter ───────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Temporary / scratch ───────────────────────────────────────
+*.tmp
+*.bak
+*.swp
+*.swo
+*~

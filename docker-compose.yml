@@ -1,0 +1,106 @@
+# ============================================================
+# docker-compose.yml — Lunar Thermal Hazard
+# Services: backend · frontend · worker
+# External: Supabase (managed cloud — no local postgres)
+# ============================================================
+
+services:
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: lunar-hazard-backend:latest
+    container_name: lunar_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PYTHONUNBUFFERED: "1"
+      MODEL_PATH: "/app/lunagraph_gcn_model.pth"
+    expose:
+      - "8000"
+    volumes:
+      - model_data:/app/lunagraph_gcn_model.pth
+    networks:
+      - lunar_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+    
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: lunar-hazard-frontend:latest
+    container_name: lunar_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    networks:
+      - lunar_net
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    image: lunar-hazard-worker:latest
+    container_name: lunar_worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PYTHONUNBUFFERED: "1"
+      MODEL_PATH: "/app/lunagraph_gcn_model.pth"
+      NOAA_FETCH_INTERVAL_HOURS: "6"
+      DATASET_INTERVAL_HOURS: "24"
+      INFERENCE_INTERVAL_HOURS: "6"
+    volumes:
+      - model_data:/app/lunagraph_gcn_model.pth
+    networks:
+      - lunar_net
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "worker_entrypoint.py"]
+      interval: 60s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+
+volumes:
+  model_data:
+    driver: local
+
+networks:
+  lunar_net:
+    driver: bridge

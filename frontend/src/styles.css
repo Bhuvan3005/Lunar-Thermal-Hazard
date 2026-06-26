@@ -226,3 +226,326 @@ body {
     top: calc(100% - 18rem);
   }
 }
+
+/* =========================================================
+   MISSION PLANNING PANEL
+   ========================================================= */
+
+.mission-panel {
+  bottom: 1.5rem;
+  left: 1.5rem;
+  min-width: 280px;
+  max-width: 340px;
+}
+
+.mission-panel .panel-title {
+  color: #7de2ff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mission-panel .panel-title::before {
+  content: "🛸";
+  font-size: 1rem;
+}
+
+/* -- Mode Toggle -- */
+.mode-toggle-btn {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+  border: 1.5px solid rgba(125, 226, 255, 0.35);
+  background: rgba(125, 226, 255, 0.08);
+  color: #7de2ff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  margin-bottom: 0.75rem;
+}
+
+.mode-toggle-btn:hover {
+  background: rgba(125, 226, 255, 0.16);
+  border-color: rgba(125, 226, 255, 0.6);
+}
+
+.mode-toggle-btn.active {
+  background: rgba(125, 226, 255, 0.2);
+  border-color: #7de2ff;
+  box-shadow: 0 0 14px rgba(125, 226, 255, 0.25);
+}
+
+/* -- Selection Indicators -- */
+.selection-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+}
+
+.selection-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(238, 242, 255, 0.7);
+  transition: all 0.25s ease;
+}
+
+.selection-indicator .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.selection-indicator.start .dot { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+.selection-indicator.goal .dot { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+
+.selection-indicator.set {
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #eef2ff;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* -- Mode Selector -- */
+.mode-selector {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.85rem;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 0.45rem 0.3rem;
+  border-radius: 9px;
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(238, 242, 255, 0.55);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  text-transform: uppercase;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.mode-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #eef2ff;
+}
+
+.mode-btn.active.shortest {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+}
+
+.mode-btn.active.safest {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.18);
+  color: #86efac;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
+}
+
+.mode-btn.active.balanced {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.12);
+}
+
+/* -- Action Buttons -- */
+.route-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.route-btn {
+  flex: 1;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  border: none;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.route-btn.generate {
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+}
+
+.route-btn.generate:hover:not(:disabled) {
+  box-shadow: 0 6px 22px rgba(59, 130, 246, 0.5);
+  transform: translateY(-1px);
+}
+
+.route-btn.generate:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.route-btn.clear {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  color: rgba(238, 242, 255, 0.65);
+}
+
+.route-btn.clear:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #eef2ff;
+}
+
+.route-status {
+  margin-top: 0.65rem;
+  font-size: 0.78rem;
+  color: rgba(238, 242, 255, 0.55);
+  text-align: center;
+  min-height: 1.1rem;
+}
+
+.route-status.error {
+  color: #fca5a5;
+}
+
+.route-status.computing {
+  color: #7de2ff;
+}
+
+/* =========================================================
+   ROUTE ANALYTICS PANEL
+   ========================================================= */
+
+.route-analytics-panel {
+  bottom: 1.5rem;
+  right: 1.5rem;
+  min-width: 260px;
+  max-width: 300px;
+}
+
+.route-analytics-panel .panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.route-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.route-badge.shortest {
+  background: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.45);
+}
+
+.route-badge.safest {
+  background: rgba(34, 197, 94, 0.25);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.45);
+}
+
+.route-badge.balanced {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.analytics-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.82rem;
+}
+
+.analytics-stat:last-child {
+  border-bottom: none;
+}
+
+.analytics-stat .label {
+  color: rgba(238, 242, 255, 0.55);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.analytics-stat .value {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #eef2ff;
+}
+
+/* =========================================================
+   HOVER TOOLTIP ENHANCEMENTS
+   ========================================================= */
+
+.tooltip-panel .tooltip-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(238, 242, 255, 0.5);
+  margin-bottom: 0.6rem;
+}
+
+.hazard-chip {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hazard-chip.SAFE    { background: rgba(69, 184, 255, 0.2); color: #8fdcff; }
+.hazard-chip.MODERATE{ background: rgba(255, 221, 87, 0.2); color: #fff1a6; }
+.hazard-chip.HIGH    { background: rgba(255, 154, 51, 0.2); color: #ffbc7f; }
+.hazard-chip.EXTREME { background: rgba(255, 61, 61, 0.2); color: #ff9f9f; }
+
+/* =========================================================
+   RESPONSIVE ADDITIONS
+   ========================================================= */
+
+@media (max-width: 960px) {
+  .mission-panel,
+  .route-analytics-panel {
+    left: 50% !important;
+    transform: translateX(-50%);
+    right: auto !important;
+    width: calc(100% - 2rem);
+    max-width: none;
+  }
+
+  .mission-panel {
+    bottom: 12rem;
+  }
+
+  .route-analytics-panel {
+    bottom: 1rem;
+  }
+}
+
